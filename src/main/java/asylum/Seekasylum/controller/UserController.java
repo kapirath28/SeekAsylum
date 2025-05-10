@@ -1,6 +1,5 @@
 package asylum.Seekasylum.controller;
 
-import asylum.Seekasylum.dto.UserRegistrationDto;
 import asylum.Seekasylum.model.User;
 import asylum.Seekasylum.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
+@CrossOrigin(originPatterns = "http://localhost:3000", allowCredentials = "true")
 public class UserController {
 
     @Autowired
