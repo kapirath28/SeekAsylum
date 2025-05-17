@@ -16,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(originPatterns = "http://localhost:3000", allowCredentials = "true")
+@CrossOrigin(originPatterns = { "http://localhost:3000", "http://localhost:3001" }, allowCredentials = "true")
 public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
@@ -30,10 +30,15 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@RequestBody UserRegistrationDto registrationDto) {
         try {
             logger.info("Received registration request for email: {}", registrationDto.getEmail());
-            if (registrationDto.getEmail() == null || registrationDto.getPassword() == null) {
-                logger.error("Registration failed: Email or password is null");
-                return ResponseEntity.badRequest().body("Email and password are required");
+
+            // Validate required fields
+            if (registrationDto.getEmail() == null || registrationDto.getPassword() == null ||
+                    registrationDto.getFirstName() == null || registrationDto.getLastName() == null ||
+                    registrationDto.getCountryOfOrigin() == null || registrationDto.getCurrentLocation() == null) {
+                logger.error("Registration failed: Required fields are missing");
+                return ResponseEntity.badRequest().body("All fields are required");
             }
+
             User user = userService.registerUser(registrationDto);
             String token = jwtService.generateToken(user.getEmail());
 

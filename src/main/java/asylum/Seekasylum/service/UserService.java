@@ -45,9 +45,29 @@ public class UserService implements UserDetailsService {
         }
     }
 
+    private void validateName(String name, String fieldName) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " cannot be empty");
+        }
+        if (name.length() < 2) {
+            throw new IllegalArgumentException(fieldName + " must be at least 2 characters long");
+        }
+    }
+
+    private void validateLocation(String location, String fieldName) {
+        if (location == null || location.trim().isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " cannot be empty");
+        }
+    }
+
     public User registerUser(UserRegistrationDto registrationDto) {
+        // Validate all fields
         validateEmail(registrationDto.getEmail());
         validatePassword(registrationDto.getPassword());
+        validateName(registrationDto.getFirstName(), "First name");
+        validateName(registrationDto.getLastName(), "Last name");
+        validateLocation(registrationDto.getCountryOfOrigin(), "Country of origin");
+        validateLocation(registrationDto.getCurrentLocation(), "Current location");
 
         if (userRepository.existsByEmail(registrationDto.getEmail())) {
             logger.error("Registration failed: Email {} already exists", registrationDto.getEmail());
@@ -55,12 +75,12 @@ public class UserService implements UserDetailsService {
         }
 
         User user = new User();
-        user.setFirstName(registrationDto.getFirstName());
-        user.setLastName(registrationDto.getLastName());
-        user.setEmail(registrationDto.getEmail());
+        user.setFirstName(registrationDto.getFirstName().trim());
+        user.setLastName(registrationDto.getLastName().trim());
+        user.setEmail(registrationDto.getEmail().trim().toLowerCase());
         user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
-        user.setCountryOfOrigin(registrationDto.getCountryOfOrigin());
-        user.setCurrentLocation(registrationDto.getCurrentLocation());
+        user.setCountryOfOrigin(registrationDto.getCountryOfOrigin().trim());
+        user.setCurrentLocation(registrationDto.getCurrentLocation().trim());
         user.setAsylumStatus("PENDING");
 
         User savedUser = userRepository.save(user);
@@ -80,28 +100,17 @@ public class UserService implements UserDetailsService {
         return user;
     }
 
-    public User login(String email, String password) {
-        validateEmail(email);
-        validatePassword(password);
-
-        logger.info("Attempting login for email: {}", email);
-        User user = findByEmail(email);
-
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            logger.error("Password mismatch for user: {}", email);
-            throw new RuntimeException("Invalid password");
-        }
-
-        logger.info("Login successful for user: {}", email);
-        return user;
-    }
-
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        try {
-            return findByEmail(email);
-        } catch (RuntimeException e) {
-            throw new UsernameNotFoundException("User not found with email: " + email);
+        return findByEmail(email);
+    }
+
+    public User login(String email, String password) {
+        User user = findByEmail(email);
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            logger.error("Login failed: Invalid password for user {}", email);
+            throw new RuntimeException("Invalid password");
         }
+        return user;
     }
 }
